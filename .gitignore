@@ -1,0 +1,23 @@
+# Ignorar carpetas m7 y m8 de tarea_3
+tarea_3/m7-filtering/
+tarea_3/m8-processing/
+
+# Ignorar archivos temporales y de cache comunes
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+.pytest_cache/
+.coverage
+
+# Ignorar archivos de Docker
+.dockerignore
+
+# Ignorar archivos de logs
+*.log
+
+# Ignorar archivos de configuración local
+.env
+.env.local
