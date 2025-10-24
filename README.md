@@ -8,7 +8,7 @@ Profesor: Nicolás Hidalgo
 
 Esta alternativa permite iniciar todos los módulos del proyecto de forma centralizada a través de un único archivo `docker-compose`. Al ejecutar este archivo principal, se encarga automáticamente de construir y levantar los servicios definidos para cada módulo del sistema.
 
-Para iniciar el proyecto, desde el directorio `tarea_2`, ejecuta el siguiente comando:
+Para iniciar el proyecto, desde el directorio `tarea_3`, ejecuta el siguiente comando:
 
 ```bash
 docker compose up --build -d
@@ -57,3 +57,4 @@ docker compose up --build -d
 2. `m1_scrapper`
 3. `m7-filtering`
 4. `m8-processing`.
+5. `uploader`
