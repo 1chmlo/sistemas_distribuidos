@@ -11,5 +11,5 @@ log() {
 cd "$ROOT_DIR"
 log "Ejecutando pipeline desde $ROOT_DIR"
 log "Ejecutando uploader"
-docker compose run --rm uploader
+docker compose run --rm processing
 log "Pipeline completado correctamente"
