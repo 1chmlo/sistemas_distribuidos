@@ -1,6 +1,8 @@
 # Ignorar carpetas m7 y m8 de tarea_3
-tarea_3/m7-filtering/
-tarea_3/m8-processing/
+tarea_3/m7-filtering/data/
+tarea_3/m7-filtering/data_preprocesada/
+tarea_3/m7-filtering/results/
+tarea_3/m8-processing/results/
 
 # Ignorar archivos temporales y de cache comunes
 __pycache__/

@@ -31,22 +31,22 @@ services:
     depends_on:
       - mongo # Se usa el nombre del servicio
 
-  #redis:
-  #  image: redis:6.0.7
-  #  container_name: redis_general
-  #  restart: always
-  #  ports:
-  #    - 6379:6379
-  #  volumes:
-  #    - ./m3-cache/redis.conf:/usr/local/etc/redis/redis.conf
-  #  command: [sh, -c, "rm -f /data/dump.rdb && redis-server /usr/local/etc/redis/redis.conf"] #Elimina persistencia lee archivo de configuracion para tamaño maximo y politica de remocion
+  redis:
+    image: redis:6.0.7
+    container_name: redis_general
+    restart: always
+    ports:
+      - 6379:6379
+    volumes:
+      - ./m3-cache/redis.conf:/usr/local/etc/redis/redis.conf
+    command: [sh, -c, "rm -f /data/dump.rdb && redis-server /usr/local/etc/redis/redis.conf"] #Elimina persistencia lee archivo de configuracion para tamaño maximo y politica de remocion
 
-  #redis_insight:
-   # image: redislabs/redisinsight:1.14.0
-   # container_name: redis_insight_general
-   # restart: always
-   # ports:
-   #   - 8001:8001
+  redis_insight:
+    image: redislabs/redisinsight:1.14.0
+    container_name: redis_insight_general
+    restart: always
+    ports:
+      - 8001:8001
 
   # Servicio para cargar archivos JSON a MongoDB
   json_loader:
@@ -75,8 +75,6 @@ services:
       - MONGODB_COLECCION_ALERTAS=alertas
       - MONGODB_COLECCION_ATASCOS=atascos
     depends_on:
-      #json_loader:
-      #  condition: service_completed_successfully
       scrapper:
        condition: service_completed_successfully
       mongo:
@@ -86,7 +84,7 @@ services:
     build: ./m8-processing
     container_name: m8-processing-general
     volumes:
-      - ./m7-filtering/results:/app/input  # Aca el m7 guarda los csv limpios
+      - ./m7-filtering/results:/app/input
       - ./m8-processing/results:/app/results
     depends_on:
       filtering:
@@ -117,11 +115,11 @@ services:
     build: ./m9-load-transformed-data
     container_name: m9-load-transformed-data-general
     volumes:
-      - ./m8-processing/results:/app/input  # Linkear volumen m8 para que pueda acceder a los CSV
+      - ./m8-processing/results:/app/input
     depends_on:
-      # elasticsearch:
-      #   condition: service_healthy  # Comentado temporalmente para evitar error por contenedor unhealthy
-      processing:
+       elasticsearch:
+         condition: service_started
+       processing:
         condition: service_completed_successfully
 
 #Aca no es necesario definir una red comun para todos los contenedores

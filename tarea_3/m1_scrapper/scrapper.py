@@ -180,7 +180,6 @@ if __name__ == "__main__":
                     insertados = len(resultado.inserted_ids)
                     total_atascos_mongodb += insertados
                 except Exception:
-                    # Error silencioso (no muestra mensaje de error)
                     pass
         else:
             num_atascos = 0
