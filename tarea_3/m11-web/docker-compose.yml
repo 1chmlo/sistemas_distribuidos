@@ -1,0 +1,12 @@
+services:
+  web-dashboard:
+    build: .
+    container_name: m11-web-dashboard
+    ports:
+      - "8080:5000"
+    volumes:
+      - ../m8-processing/results:/app/input:ro
+    depends_on:
+      - processing
+    environment:
+      - FLASK_ENV=production

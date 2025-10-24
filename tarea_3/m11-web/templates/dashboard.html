@@ -1,0 +1,387 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="execution-info">
+    <h4>📊 Última Ejecución de Análisis</h4>
+    <p><strong>Ejecución:</strong> {{ execution_info.name }}</p>
+    <p><strong>Fecha y Hora:</strong> {{ execution_info.datetime }}</p>
+</div>
+
+<div class="row">
+    <!-- Métricas principales -->
+    <div class="col-md-6 col-lg-3">
+        <div class="metric-card text-center">
+            <h5>🚦 Atascos</h5>
+            <h3 id="total-atascos">-</h3>
+            <small>Total registrado</small>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-3">
+        <div class="metric-card text-center">
+            <h5>⚠️ Alertas</h5>
+            <h3 id="total-alertas">-</h3>
+            <small>Total registrado</small>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-3">
+        <div class="metric-card text-center">
+            <h5>🏙️ Ciudades</h5>
+            <h3 id="total-ciudades">-</h3>
+            <small>Con atascos</small>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-3">
+        <div class="metric-card text-center">
+            <h5>🕐 Hora Pico</h5>
+            <h3 id="hora-pico">-</h3>
+            <small>Mayor actividad</small>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Gráfico de atascos por ciudad -->
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>🏙️ Atascos por Ciudad (Top 10)</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="atascosChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráfico de tipos de alerta -->
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>📢 Tipos de Alertas</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="tiposAlertaChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <!-- Gráfico de horas pico -->
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5>🕐 Alertas por Hora del Día</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="horasPicoChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top calles con más accidentes -->
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5>🛣️ Calles con Más Accidentes</h5>
+            </div>
+            <div class="card-body">
+                <div id="calles-accidentes" style="max-height: 350px; overflow-y: auto;">
+                    <div class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Cargando...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <!-- Comunas con más alertas -->
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>🏘️ Comunas con Más Alertas</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="comunasAlertasChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Atascos más largos -->
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>🚗 Atascos Más Largos</h5>
+            </div>
+            <div class="card-body">
+                <div id="atascos-largos" style="max-height: 350px; overflow-y: auto;">
+                    <div class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Cargando...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Datos pasados desde Flask
+const data = {{ data | tojson | safe }};
+
+// Configuración de colores
+const colors = {
+    primary: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#FF6384', '#C9CBCF', '#4BC0C0', '#FF6384'],
+    gradient: ['rgba(255, 99, 132, 0.8)', 'rgba(54, 162, 235, 0.8)', 'rgba(255, 205, 86, 0.8)', 'rgba(75, 192, 192, 0.8)', 'rgba(153, 102, 255, 0.8)']
+};
+
+// Función para actualizar métricas
+function updateMetrics() {
+    if (data.atascos_ciudad && data.atascos_ciudad.length > 0) {
+        const totalAtascos = data.atascos_ciudad.reduce((sum, item) => sum + (item.num_atascos || 0), 0);
+        document.getElementById('total-atascos').textContent = totalAtascos.toLocaleString();
+        document.getElementById('total-ciudades').textContent = data.atascos_ciudad.length;
+    }
+
+    if (data.tipos_alerta && data.tipos_alerta.length > 0) {
+        const totalAlertas = data.tipos_alerta.reduce((sum, item) => sum + (item.cantidad || 0), 0);
+        document.getElementById('total-alertas').textContent = totalAlertas.toLocaleString();
+    }
+
+    if (data.horas_pico && data.horas_pico.length > 0) {
+        const horaPico = data.horas_pico[0];
+        document.getElementById('hora-pico').textContent = horaPico.hora + ':00';
+    }
+}
+
+// Gráfico de atascos por ciudad
+function createAtascosChart() {
+    if (!data.atascos_ciudad || data.atascos_ciudad.length === 0) return;
+
+    const ctx = document.getElementById('atascosChart').getContext('2d');
+    const topCities = data.atascos_ciudad.slice(0, 10);
+    
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: topCities.map(item => item.ciudad),
+            datasets: [{
+                label: 'Número de Atascos',
+                data: topCities.map(item => item.num_atascos),
+                backgroundColor: colors.gradient[0],
+                borderColor: colors.primary[0],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+}
+
+// Gráfico de tipos de alerta
+function createTiposAlertaChart() {
+    if (!data.tipos_alerta || data.tipos_alerta.length === 0) return;
+
+    const ctx = document.getElementById('tiposAlertaChart').getContext('2d');
+    const validData = data.tipos_alerta.filter(item => item.tipo_alerta && item.tipo_alerta !== 'type');
+    
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: validData.map(item => item.tipo_alerta),
+            datasets: [{
+                data: validData.map(item => item.cantidad),
+                backgroundColor: colors.primary.slice(0, validData.length),
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+}
+
+// Gráfico de horas pico
+function createHorasPicoChart() {
+    if (!data.horas_pico || data.horas_pico.length === 0) return;
+
+    const ctx = document.getElementById('horasPicoChart').getContext('2d');
+    const validData = data.horas_pico.filter(item => item.hora && item.hora !== '');
+    
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: validData.map(item => item.hora + ':00'),
+            datasets: [{
+                label: 'Cantidad de Alertas',
+                data: validData.map(item => item.cantidad_alertas),
+                borderColor: colors.primary[1],
+                backgroundColor: colors.gradient[1],
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+}
+
+// Gráfico de comunas con alertas
+function createComunasAlertasChart() {
+    if (!data.comunas_alertas || data.comunas_alertas.length === 0) return;
+
+    const ctx = document.getElementById('comunasAlertasChart').getContext('2d');
+    const topComunas = data.comunas_alertas.slice(0, 8);
+    
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: topComunas.map(item => item.comuna),
+            datasets: [{
+                label: 'Cantidad de Alertas',
+                data: topComunas.map(item => item.cantidad_alertas),
+                backgroundColor: colors.gradient[2],
+                borderColor: colors.primary[2],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            indexAxis: 'y',
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                x: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+}
+
+// Mostrar calles con accidentes
+function showCallesAccidentes() {
+    const container = document.getElementById('calles-accidentes');
+    
+    if (!data.calles_accidentes || data.calles_accidentes.length === 0) {
+        container.innerHTML = '<p class="text-muted">No hay datos disponibles</p>';
+        return;
+    }
+
+    const topCalles = data.calles_accidentes.slice(0, 10);
+    let html = '<div class="list-group list-group-flush">';
+    
+    topCalles.forEach((calle, index) => {
+        const nombre = calle.calle || 'Calle desconocida';
+        const ciudad = calle.ciudad || '';
+        const accidentes = calle.cantidad_accidentes || 0;
+        
+        html += `
+            <div class="list-group-item">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>${index + 1}.</strong> ${nombre}
+                        ${ciudad ? `<small class="text-muted d-block">${ciudad}</small>` : ''}
+                    </div>
+                    <span class="badge bg-danger rounded-pill">${accidentes}</span>
+                </div>
+            </div>
+        `;
+    });
+    
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+// Mostrar atascos largos
+function showAtascosLargos() {
+    const container = document.getElementById('atascos-largos');
+    
+    if (!data.atascos_largos || data.atascos_largos.length === 0) {
+        container.innerHTML = '<p class="text-muted">No hay datos disponibles</p>';
+        return;
+    }
+
+    const topAtascos = data.atascos_largos.slice(0, 10);
+    let html = '<div class="list-group list-group-flush">';
+    
+    topAtascos.forEach((atasco, index) => {
+        const ciudad = atasco.city || 'Ciudad desconocida';
+        const calle = atasco.street || '';
+        const largo = parseInt(atasco.length) || 0;
+        
+        html += `
+            <div class="list-group-item">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>${index + 1}.</strong> ${ciudad}
+                        ${calle ? `<small class="text-muted d-block">${calle}</small>` : ''}
+                    </div>
+                    <span class="badge bg-warning rounded-pill">${largo.toLocaleString()}m</span>
+                </div>
+            </div>
+        `;
+    });
+    
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+// Inicializar dashboard
+document.addEventListener('DOMContentLoaded', function() {
+    updateMetrics();
+    createAtascosChart();
+    createTiposAlertaChart();
+    createHorasPicoChart();
+    createComunasAlertasChart();
+    showCallesAccidentes();
+    showAtascosLargos();
+});
+</script>
+{% endblock %}

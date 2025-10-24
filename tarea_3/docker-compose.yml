@@ -122,6 +122,16 @@ services:
        processing:
         condition: service_completed_successfully
 
+  web-dashboard:
+    build: ./m11-web
+    container_name: m11-web-dashboard
+    ports:
+      - "8080:5000"
+    volumes:
+      - ./m8-processing/results:/app/input:ro
+    environment:
+      - FLASK_ENV=production
+
 #Aca no es necesario definir una red comun para todos los contenedores
 #porque con docker compose esta red se crea de forma automatica "directorio_default"
 
