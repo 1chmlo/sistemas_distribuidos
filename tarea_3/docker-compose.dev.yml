@@ -31,22 +31,22 @@ services:
     depends_on:
       - mongo # Se usa el nombre del servicio
 
-  #redis:
-  #  image: redis:6.0.7
-  #  container_name: redis_general
-  #  restart: always
-  #  ports:
-  #    - 6379:6379
-  #  volumes:
-  #    - ./m3-cache/redis.conf:/usr/local/etc/redis/redis.conf
-  #  command: [sh, -c, "rm -f /data/dump.rdb && redis-server /usr/local/etc/redis/redis.conf"] #Elimina persistencia lee archivo de configuracion para tamaño maximo y politica de remocion
+  redis:
+    image: redis:6.0.7
+    container_name: redis_general
+    restart: always
+    ports:
+      - 6379:6379
+    volumes:
+      - ./m3-cache/redis.conf:/usr/local/etc/redis/redis.conf
+    command: [sh, -c, "rm -f /data/dump.rdb && redis-server /usr/local/etc/redis/redis.conf"] #Elimina persistencia lee archivo de configuracion para tamaño maximo y politica de remocion
 
-  #redis_insight:
-  #  image: redislabs/redisinsight:1.14.0
-  #  container_name: redis_insight_general
-  #  restart: always
-  #  ports:
-  #    - 8001:8001
+  redis_insight:
+    image: redislabs/redisinsight:1.14.0
+    container_name: redis_insight_general
+    restart: always
+    ports:
+      - 8001:8001
 
   # Servicio para cargar archivos JSON a MongoDB
   json_loader:
@@ -90,37 +90,37 @@ services:
       filtering:
         condition: service_completed_successfully
 
-  #elasticsearch:
-  #  image: docker.elastic.co/elasticsearch/elasticsearch:8.13.4
-  #  container_name: elasticsearch
-  #  environment:
-  #    - discovery.type=single-node
-  #    - xpack.security.enabled=false
-  #  ports:
-  #    - "9200:9200"
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.4
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+    ports:
+      - "9200:9200"
   
 
-  #kibana:
-   # image: docker.elastic.co/kibana/kibana:8.13.4
-    #container_name: kibana
-    #environment:
-    #  - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
-    #  - xpack.security.enabled=false
-    #ports:
-    #  - "5601:5601"
-    #depends_on:
-    #  - elasticsearch
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.13.4
+    container_name: kibana
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - xpack.security.enabled=false
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
 
-  #uploader:
-   # build: ./m9-load-transformed-data
-    #container_name: m9-load-transformed-data-general
-    #volumes:
-    #  - ./m8-processing/results:/app/input
-    #depends_on:
-    #   elasticsearch:
-     #    condition: service_started
-     #  processing:
-      #  condition: service_completed_successfully
+  uploader:
+    build: ./m9-load-transformed-data
+    container_name: m9-load-transformed-data-general
+    volumes:
+      - ./m8-processing/results:/app/input
+    depends_on:
+       elasticsearch:
+         condition: service_started
+       processing:
+        condition: service_completed_successfully
 
   web-dashboard:
     build: ./m11-web
